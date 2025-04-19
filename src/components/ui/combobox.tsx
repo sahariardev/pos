@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { use, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDown } from "lucide-react";
 import {
@@ -31,6 +31,21 @@ export function Combobox({ items, placeholder, onSelect, noSelect, className }: 
   const [value, setValue] = useState("");
   const [popoverWidth, setPopoverWidth] = useState(0);
 
+
+  const [filteredItems, setFilteredItems] = useState(items);
+  
+  useEffect(() => {
+    if (items.length > 0) {
+      setFilteredItems(items);
+    }
+  }, [items]);
+  
+  const handleFilter = (data: any) => {
+    const query = data.toLowerCase();
+    const filtered = items.filter(item => item.name.toLowerCase().includes(query));
+    setFilteredItems(filtered);
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -53,19 +68,21 @@ export function Combobox({ items, placeholder, onSelect, noSelect, className }: 
         style={{ width: popoverWidth }}
       >
         <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
+          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`}  onValueChange={handleFilter} />
           <CommandEmpty>No item found.</CommandEmpty>
           <CommandList>
             <CommandGroup>
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <CommandItem
                   key={item.id}
-                  value={item.id.toString()}
                   onSelect={(currentValue) => {
+                     console.log("Selected item:", item);
+                     console.log("Selected value:", currentValue); 
+                    
                     if (typeof item.id === "string") {
-                      onSelect(currentValue);
+                      onSelect(item.id);
                     } else {
-                      onSelect(Number(currentValue));
+                      onSelect(Number(item.id));
                     }
                     setOpen(false);
                     if (noSelect) return;
