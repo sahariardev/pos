@@ -14,6 +14,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { pdf } from '@react-pdf/renderer';
 import { ReceiptPDF } from './ReceiptPDF';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 
 type Product = {
   id: number;
@@ -176,9 +177,19 @@ export default function POSPage() {
   };
 
   const generateAndOpenPDF = async (data: any) => {
-      const blob = await pdf(<ReceiptPDF items={data.items} total={data.total} orderId={data.orderId}/>).toBlob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+    const { pdf } = await import('@react-pdf/renderer');
+  const { ReceiptPDF } = await import('./ReceiptPDF'); // adjust path if needed
+
+  const blob = await pdf(
+    <ReceiptPDF
+      items={data.items}
+      total={data.total}
+      orderId={data.orderId}
+    />
+  ).toBlob();
+
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
     };
 
   return (

@@ -1,4 +1,4 @@
-import { signup, login } from "./actions";
+import { login } from "./actions";
 /**
  * v0 by Vercel.
  * @see https://v0.dev/t/y71wwxpKfsO
@@ -43,7 +43,7 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
               <Button formAction={login}>Log in</Button>
-              <Button formAction={signup}>Sign up</Button>
+              {/*<Button formAction={signup}>Sign up</Button>*/}
             </CardFooter>
           </form>
         </Card>
