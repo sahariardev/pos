@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
+import { pdf } from '@react-pdf/renderer';
+import { ReceiptPDF } from './ReceiptPDF';
 
 type Product = {
   id: number;
@@ -64,6 +66,7 @@ export default function POSPage() {
       if (!response.ok) throw new Error("Failed to fetch customers");
       const data = await response.json();
       setCustomers(data);
+      setSelectedCustomer(data[0]);
     } catch (error) {
       console.error("Error fetching customers:", error);
     }
@@ -75,6 +78,8 @@ export default function POSPage() {
       if (!response.ok) throw new Error("Failed to fetch payment methods");
       const data = await response.json();
       setPaymentMethods(data);
+      console.log(data.filter(d => d.name === 'Cash')[0]  );
+      setPaymentMethod(data.filter(d => d.name === 'Cash')[0]);
     } catch (error) {
       console.error("Error fetching payment methods:", error);
     }
@@ -130,6 +135,10 @@ export default function POSPage() {
       return;
     }
 
+    const formData = selectedProducts.map(p => ({ id: p.id, quantity: p.quantity, price: p.price }));
+    const items = selectedProducts.map(p => ({ name: p.name, quantity: p.quantity, price: p.price }));
+    console.log(items);
+
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -139,7 +148,7 @@ export default function POSPage() {
         body: JSON.stringify({
           customerId: selectedCustomer.id,
           paymentMethodId: paymentMethod.id,
-          products: selectedProducts.map(p => ({ id: p.id, quantity: p.quantity, price: p.price })),
+          products: formData,
           total,
         }),
       });
@@ -148,18 +157,34 @@ export default function POSPage() {
 
       const order = await response.json();
 
+      console.log(order);
+
       // Reset the form
       setSelectedProducts([]);
       setSelectedCustomer(null);
       setPaymentMethod(null);
+      //print pdf
+
+     generateAndOpenPDF({
+      items: selectedProducts.map(p => ({ name: p.name, quantity: p.quantity, price: p.price })),
+      total: total,
+      orderId: order.id
+     });
+
     } catch (error) {
       console.error("Error creating order:", error);
     }
   };
 
+  const generateAndOpenPDF = async (data) => {
+      const blob = await pdf(<ReceiptPDF items={data.items} total={data.total} orderId={data.orderId}/>).toBlob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    };
+
   return (
     <div className="container mx-auto p-4">
-      <Card className="mb-4">
+      {/*<Card className="mb-4">
         <CardHeader>
           <CardTitle>Sale Details</CardTitle>
         </CardHeader>
@@ -179,7 +204,7 @@ export default function POSPage() {
             />
           </div>
         </CardContent>
-      </Card>
+      </Card>*/}
       <Card>
         <CardHeader>
           <CardTitle>Products</CardTitle>
@@ -238,7 +263,7 @@ export default function POSPage() {
             </TableBody>
           </Table>
           <div className="mt-4 text-right">
-            <strong>Total: ${total.toFixed(2)}</strong>
+            <strong>Total: {total.toFixed(2)} BDT</strong>
           </div>
           <div className="mt-4">
             <Button onClick={handleCreateOrder} disabled={selectedProducts.length === 0 || !selectedCustomer || !paymentMethod}>

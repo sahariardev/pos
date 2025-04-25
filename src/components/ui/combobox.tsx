@@ -76,9 +76,6 @@ export function Combobox({ items, placeholder, onSelect, noSelect, className }: 
                 <CommandItem
                   key={item.id}
                   onSelect={(currentValue) => {
-                     console.log("Selected item:", item);
-                     console.log("Selected value:", currentValue); 
-                    
                     if (typeof item.id === "string") {
                       onSelect(item.id);
                     } else {

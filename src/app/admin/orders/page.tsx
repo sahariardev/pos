@@ -87,6 +87,7 @@ export default function OrdersPage() {
           throw new Error("Failed to fetch orders");
         }
         const data = await response.json();
+        console.log(data);
         setOrders(data);
       } catch (error) {
         setError((error as Error).message);
@@ -97,6 +98,38 @@ export default function OrdersPage() {
 
     fetchOrders();
   }, []);
+
+  function exportToCSV() {
+  
+      const filename = 'orders.csv'
+      const header = 'Order ID,Customer,Total,Date';
+
+      const pritableItems = [];
+      for(const order of orders) {
+
+          const printTableItem = {
+              orderId: order.id,
+              customer: order.customer.name,
+              total: order.total_amount,
+              date: order.created_at
+          }
+
+          pritableItems.push(printTableItem);
+      }  
+
+      const csvRows = pritableItems.map(row => Object.values(row).join(','));
+      const csvString = `${header}\n${csvRows.join('\n')}`;
+
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', filename);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+}
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
@@ -278,9 +311,9 @@ export default function OrdersPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <Button size="sm" onClick={() => setShowNewOrderDialog(true)}>
+          <Button size="sm" onClick={() => exportToCSV()}>
             <PlusCircle className="w-4 h-4 mr-2" />
-            Create Order
+            Export
           </Button>
         </div>
       </CardHeader>
@@ -294,7 +327,6 @@ export default function OrdersPage() {
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -302,44 +334,9 @@ export default function OrdersPage() {
                 <TableRow key={order.id}>
                   <TableCell>{order.id}</TableCell>
                   <TableCell>{order.customer.name}</TableCell>
-                  <TableCell>${order.total_amount.toFixed(2)}</TableCell>
+                  <TableCell>{order.total_amount.toFixed(2)} BDT</TableCell>
                   <TableCell>{order.status}</TableCell>
                   <TableCell>{order.created_at}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedOrderId(order.id);
-                          setNewOrderCustomerName(order.customer.name);
-                          setNewOrderTotal(order.total_amount.toString());
-                          setNewOrderStatus(order.status);
-                          setIsEditOrderDialogOpen(true);
-                        }}
-                      >
-                        <FilePenIcon className="w-4 h-4" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setOrderToDelete(order);
-                          setIsDeleteConfirmationOpen(true);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                      <Link href={`/admin/orders/${order.id}`} prefetch={false}>
-                        <Button size="icon" variant="ghost">
-                          <EyeIcon className="w-4 h-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                      </Link>
-                    </div>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

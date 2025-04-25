@@ -1,0 +1,90 @@
+// components/ReceiptPDF.tsx
+import React from 'react';
+import {
+  Document,
+  Page,
+  Text,
+  Image,
+  View,
+  StyleSheet,
+  Font,
+} from '@react-pdf/renderer';
+
+// Optional: Register monospaced font for receipt feel
+Font.register({
+  family: 'RobotoMono',
+  src: '/RobotoMono-Regular.ttf',
+});
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 10,
+    fontSize: 10,
+    fontFamily: 'RobotoMono',
+    width: '58mm',
+  },
+  center: {
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+   image: {
+    width: 70,
+    height: 70,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  line: {
+    borderBottom: '1px dashed #000',
+    marginVertical: 5,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  bold: {
+    fontWeight: 'bold',
+  },
+});
+
+type ReceiptPDFProps = {
+  items: { name: string; quantity: number, price: number }[];
+  total: number;
+  orderId: number;
+};
+
+export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({items, total, orderId}) => (
+  <Document>
+    <Page  size={{ width: 165.35, height: 600 }} style={styles.page}>
+      <View style={{ alignItems: 'center', marginBottom: 10 }}>
+        <Image
+          style={styles.image}
+          src="/whatta_cup_logo.jpg"
+        />
+      </View>
+      <View>
+        <Text style={[styles.center, styles.bold]}>Whatta Cup!</Text>
+        <Text style={styles.center}>Doulatpur, Khulna</Text>
+        <Text style={styles.center}>Order ID # {orderId}</Text>
+        <Text style={styles.center}>------------------------------</Text>
+      </View>
+
+      <View>
+        {items.map((item, index) => (
+          <View style={styles.row} key={index}>
+            <Text>{item.name}</Text>
+            <Text>{item.quantity}*{item.price} BDT</Text>
+          </View>
+        ))}
+        <View style={[styles.row, { marginTop: 5 }]}>
+          <Text style={styles.bold}>Total</Text>
+          <Text style={styles.bold}>{total} BDT</Text>
+        </View>
+        <Text style={styles.line}></Text>
+      </View>
+
+      <View style={styles.center}>
+        <Text>Thank You!</Text>
+      </View>
+    </Page>
+  </Document>
+);

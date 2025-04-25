@@ -133,8 +133,9 @@ export default function Cashier() {
         if (!response.ok) {
           throw new Error("Failed to fetch transactions");
         }
-        const data = await response.json();
+        const  data = await response.json();
         setTransactions(data);
+        console.log(data);
       } catch (error) {
         console.error("Error fetching transactions:", error);
       } finally {
@@ -144,6 +145,39 @@ export default function Cashier() {
 
     fetchTransactions();
   }, []);
+
+  function exportToCSV() {
+      const filename = 'transaction.csv'
+      const header = 'Transaction ID,Category,Description,Amount,Status,Date';
+
+      const pritableItems = [];
+      for (const transaction of transactions) {
+
+          const printTableItem = {
+              transactionId: transaction.id,
+              category: transaction.category,
+              description: transaction.description,
+              amount: transaction.amount,
+              status: transaction.status,
+              date: formatDate(transaction.created_at)
+          }
+
+          pritableItems.push(printTableItem);
+      }  
+
+      const csvRows = pritableItems.map(row => Object.values(row).join(','));
+      const csvString = `${header}\n${csvRows.join('\n')}`;
+
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', filename);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+}
 
   if (loading) {
     return (
@@ -157,8 +191,19 @@ export default function Cashier() {
     <>
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Cashier Transactions</CardTitle>
+          <CardTitle>
+          
+          <div>
+            Cashier Transactions
+          </div> 
+  
+          </CardTitle>
           <CardDescription>Manage your cashier transactions.</CardDescription>
+          
+          <Button className="w-24" size="sm" onClick={() => exportToCSV()}>
+              Export
+          </Button>
+
         </CardHeader>
         <CardContent>
           <Table>
@@ -187,7 +232,7 @@ export default function Cashier() {
                     <Badge variant={transaction.type}>{transaction.type}</Badge>
                   </TableCell>
                   <TableCell>{formatDate(transaction.created_at)}</TableCell>
-                  <TableCell>${transaction.amount.toFixed(2)}</TableCell>
+                  <TableCell>{transaction.amount.toFixed(2)} BDT</TableCell>
                   <TableCell>
                     <Badge
                       variant={
@@ -215,8 +260,8 @@ export default function Cashier() {
                         <DropdownMenuItem>Edit</DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
-                            setTransactionToDelete(transaction);
-                            setIsDeleteConfirmationOpen(true);
+                            //setTransactionToDelete(transaction);
+                            //setIsDeleteConfirmationOpen(true);
                           }}
                         >
                           Delete

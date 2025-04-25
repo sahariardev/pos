@@ -21,9 +21,14 @@ export async function GET(request: Request) {
       created_at,
       customer:customer_id (
         name
+      ),
+      order_items:order_items (
+        id,
+        product_id,
+        quantity,
+        price
       )
       `)
-    .eq('user_uid', user.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
