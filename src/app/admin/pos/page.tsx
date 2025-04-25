@@ -78,8 +78,7 @@ export default function POSPage() {
       if (!response.ok) throw new Error("Failed to fetch payment methods");
       const data = await response.json();
       setPaymentMethods(data);
-      console.log(data.filter(d => d.name === 'Cash')[0]  );
-      setPaymentMethod(data.filter(d => d.name === 'Cash')[0]);
+      setPaymentMethod(data.filter((d:any ) => d.name === 'Cash')[0]);
     } catch (error) {
       console.error("Error fetching payment methods:", error);
     }
@@ -176,7 +175,7 @@ export default function POSPage() {
     }
   };
 
-  const generateAndOpenPDF = async (data) => {
+  const generateAndOpenPDF = async (data: any) => {
       const blob = await pdf(<ReceiptPDF items={data.items} total={data.total} orderId={data.orderId}/>).toBlob();
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
