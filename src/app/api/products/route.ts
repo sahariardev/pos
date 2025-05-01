@@ -14,7 +14,6 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .eq('user_uid', user.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

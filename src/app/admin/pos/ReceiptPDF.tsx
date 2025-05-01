@@ -41,6 +41,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  itemName: {
+    width: '60%', // adjust as needed
+    marginRight: 5,
+    wordBreak: 'break-word', // or use `wrap: true` if needed
+  },
+  itemPrice: {
+    width: '40%',
+    textAlign: 'right',
+  },
   bold: {
     fontWeight: 'bold',
   },
@@ -58,7 +72,7 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({items, total, orderId}) =
       <View style={{ alignItems: 'center', marginBottom: 10 }}>
         <Image
           style={styles.image}
-          src="/whatta_cup_logo.jpg"
+          src="/logo_black_and_white.jpg"
         />
       </View>
       <View>
@@ -70,9 +84,9 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({items, total, orderId}) =
 
       <View>
         {items.map((item, index) => (
-          <View style={styles.row} key={index}>
-            <Text>{item.name}</Text>
-            <Text>{item.quantity}*{item.price} BDT</Text>
+          <View style={styles.itemRow} key={index}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <Text style={styles.itemPrice}>{item.quantity}*{item.price} BDT</Text>
           </View>
         ))}
         <View style={[styles.row, { marginTop: 5 }]}>

@@ -161,8 +161,6 @@ export default function POSPage() {
 
       // Reset the form
       setSelectedProducts([]);
-      setSelectedCustomer(null);
-      setPaymentMethod(null);
       //print pdf
 
      generateAndOpenPDF({

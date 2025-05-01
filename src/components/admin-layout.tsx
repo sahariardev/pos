@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
 import {
   Package2Icon,
   SearchIcon,
@@ -36,6 +37,18 @@ const pageNames: { [key: string]: string } = {
   "/admin/orders": "Orders",
   "/admin/pos": "Point of Sale",
   "/admin/cashier": "Cashier",
+};
+
+const supabase = createClient();
+
+const handleLogout = async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error('Logout error:', error.message);
+  } else {
+    console.log('Logged out successfully');
+    // redirect or update UI state
+  }
 };
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -79,10 +92,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
