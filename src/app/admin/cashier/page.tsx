@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { EllipsisVerticalIcon, Loader2Icon } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -41,8 +41,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "@radix-ui/react-icons";
+import { format } from "date-fns";
 
 type TransactionType = "income" | "expense";
+
 
 interface Transaction {
   id: number;
@@ -54,8 +59,18 @@ interface Transaction {
   status: string;
 }
 
+function addDays(date: Date, days: number) {
+  const newDate = new Date(date);
+  newDate.setDate(date.getDate() + days);
+  return newDate;
+}
+
 export default function Cashier() {
+  const [dateFrom, setDateFrom] = useState<Date>();
+  const [dateTo, setDateTo] = useState<Date>()
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [filtertedTransaction, setFilteredTransaction] = useState<Transaction[]>([]);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
     useState(false);
   const [transactionToDelete, setTransactionToDelete] =
@@ -74,6 +89,28 @@ export default function Cashier() {
     setNewTransaction((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleClearFilter = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setFilteredTransaction(transactions);
+  };
+
+  const handleFilter = () => {
+    if (dateFrom && dateTo) {
+      const filteredTransactions = transactions.filter((transaction) => {
+        console.log(transaction);
+        const transactionDate = new Date(transaction.created_at);
+        console.log(transactionDate >= dateFrom && transactionDate <= dateTo);
+        return (
+          transactionDate >= dateFrom && transactionDate < addDays(dateTo, 1)
+        );
+      });
+      setFilteredTransaction(filteredTransactions);
+    } else {
+      setFilteredTransaction(transactions);
+    }
+  };
+
   const handleAddTransaction = async () => {
     try {
       const response = await fetch("/api/transactions", {
@@ -87,6 +124,7 @@ export default function Cashier() {
       if (response.ok) {
         const addedTransaction = await response.json();
         setTransactions((prev) => [...prev, addedTransaction]);
+        setFilteredTransaction((prev) => [...prev, addedTransaction]);
         setNewTransaction({
           description: "",
           category: "",
@@ -102,30 +140,6 @@ export default function Cashier() {
     }
   };
 
-  const handleDeleteTransaction = useCallback(async () => {
-    if (!transactionToDelete) return;
-    try {
-      const response = await fetch(
-        `/api/transactions/${transactionToDelete.id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (response.ok) {
-        setTransactions(
-          transactions.filter((t) => t.id !== transactionToDelete.id)
-        );
-        setIsDeleteConfirmationOpen(false);
-        setTransactionToDelete(null);
-      } else {
-        console.error("Failed to delete transaction");
-      }
-    } catch (error) {
-      console.error("Error deleting transaction:", error);
-    }
-  }, [transactionToDelete, transactions]);
-
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
@@ -133,8 +147,9 @@ export default function Cashier() {
         if (!response.ok) {
           throw new Error("Failed to fetch transactions");
         }
-        const  data = await response.json();
+        const data = await response.json();
         setTransactions(data);
+        setFilteredTransaction(data);
         console.log(data);
       } catch (error) {
         console.error("Error fetching transactions:", error);
@@ -147,37 +162,37 @@ export default function Cashier() {
   }, []);
 
   function exportToCSV() {
-      const filename = 'transaction.csv'
-      const header = 'Transaction ID,Category,Description,Amount,Status,Date';
+    const filename = 'transaction.csv'
+    const header = 'Transaction ID,Category,Description,Amount,Status,Date';
 
-      const pritableItems = [];
-      for (const transaction of transactions) {
+    const pritableItems = [];
+    for (const transaction of filtertedTransaction) {
 
-          const printTableItem = {
-              transactionId: transaction.id,
-              category: transaction.category,
-              description: transaction.description,
-              amount: transaction.amount,
-              status: transaction.status,
-              date: formatDate(transaction.created_at)
-          }
+      const printTableItem = {
+        transactionId: transaction.id,
+        category: transaction.category,
+        description: transaction.description,
+        amount: transaction.amount,
+        status: transaction.status,
+        date: formatDate(transaction.created_at)
+      }
 
-          pritableItems.push(printTableItem);
-      }  
+      pritableItems.push(printTableItem);
+    }
 
-      const csvRows = pritableItems.map(row => Object.values(row).join(','));
-      const csvString = `${header}\n${csvRows.join('\n')}`;
+    const csvRows = pritableItems.map(row => Object.values(row).join(','));
+    const csvString = `${header}\n${csvRows.join('\n')}`;
 
-      const blob = new Blob([csvString], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.setAttribute('href', url);
-      a.setAttribute('download', filename);
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-}
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', filename);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }
 
   if (loading) {
     return (
@@ -192,16 +207,71 @@ export default function Cashier() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>
-          
-          <div>
-            Cashier Transactions
-          </div> 
-  
+
+            <div>
+              Cashier Transactions
+            </div>
+
           </CardTitle>
           <CardDescription>Manage your cashier transactions.</CardDescription>
-          
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !dateFrom && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon />
+                {dateFrom ? format(dateFrom, "PPP") : <span>From date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateFrom}
+                onSelect={setDateFrom}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !dateTo && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon />
+                {dateTo ? format(dateTo, "PPP") : <span>From date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateTo}
+                onSelect={setDateTo}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Button className="w-24" size="sm" onClick={handleFilter}>
+            Filter
+          </Button>
+
+          <Button className="w-24" size="sm" onClick={handleClearFilter}>
+            Clear Filter
+          </Button>
+
+
           <Button className="w-24" size="sm" onClick={() => exportToCSV()}>
-              Export
+            Export
           </Button>
 
         </CardHeader>
@@ -223,7 +293,7 @@ export default function Cashier() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => (
+              {filtertedTransaction.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell>{transaction.id}</TableCell>
                   <TableCell>{transaction.description}</TableCell>
@@ -346,31 +416,6 @@ export default function Cashier() {
         </CardContent>
         {/* Remove card footer */}
       </Card>
-      <Dialog
-        open={isDeleteConfirmationOpen}
-        onOpenChange={setIsDeleteConfirmationOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this transaction? This action
-              cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteConfirmationOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteTransaction}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
