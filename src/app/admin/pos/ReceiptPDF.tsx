@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 5,
   },
-   image: {
+  image: {
     width: 70,
     height: 70,
     marginBottom: 10,
@@ -64,11 +64,14 @@ type ReceiptPDFProps = {
   items: { name: string; quantity: number, price: number }[];
   total: number;
   orderId: number;
+  discount: number;
+  subtotal: number;
 };
 
-export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({items, total, orderId}) => (
-  <Document>
-    <Page  size={{ width: 165.35, height: 600 }} style={styles.page}>
+export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ items, total, orderId, discount, subtotal }) => {
+
+  return (<Document>
+    <Page size={{ width: 165.35, height: 600 }} style={styles.page}>
       <View style={{ alignItems: 'center', marginBottom: 10 }}>
         <Image
           style={styles.image}
@@ -78,7 +81,7 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({items, total, orderId}) =
       <View>
         <Text style={[styles.center, styles.bold]}>Whatta Cup!</Text>
         <Text style={styles.center}>Doulatpur, Khulna</Text>
-        <Text style={styles.center}>Order ID # {orderId}</Text>
+        <Text style={styles.center}>Order ID # {orderId % 100}</Text>
         <Text style={styles.center}>------------------------------</Text>
       </View>
 
@@ -89,10 +92,7 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({items, total, orderId}) =
             <Text style={styles.itemPrice}>{item.quantity}*{item.price} BDT</Text>
           </View>
         ))}
-        <View style={[styles.row, { marginTop: 5 }]}>
-          <Text style={styles.bold}>Total</Text>
-          <Text style={styles.bold}>{total} BDT</Text>
-        </View>
+        {discount > 0 ? discountView(total, discount, subtotal) : normalView(total)}
         <Text style={styles.line}></Text>
       </View>
 
@@ -100,5 +100,36 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({items, total, orderId}) =
         <Text>Thank You!</Text>
       </View>
     </Page>
-  </Document>
-);
+  </Document>);
+};
+
+const normalView = (total: number) => {
+  return (
+    <View style={[styles.row, { marginTop: 5 }]}>
+      <Text style={styles.bold}>Total</Text>
+      <Text style={styles.bold}>{total} BDT</Text>
+    </View>
+  );
+}
+
+const discountView = (total: number, discount: number, subtotal: number) => {
+  return (
+    <>
+      <Text style={styles.line}></Text>
+      <View style={[styles.row, { marginTop: 5 }]}>
+        <Text style={styles.bold}>Subtotal</Text>
+        <Text style={styles.bold}>{subtotal} BDT</Text>
+      </View>
+
+      <View style={[styles.row, { marginTop: 5 }]}>
+        <Text style={styles.bold}>Discount</Text>
+        <Text style={styles.bold}>{discount} %</Text>
+      </View>
+
+      <View style={[styles.row, { marginTop: 5 }]}>
+        <Text style={styles.bold}>Total</Text>
+        <Text style={styles.bold}>{total} BDT</Text>
+      </View>
+    </>
+  );
+}

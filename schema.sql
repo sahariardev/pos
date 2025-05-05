@@ -33,6 +33,7 @@ CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER REFERENCES customers(id),
     total_amount DECIMAL(10, 2) NOT NULL,
+    discount DECIMAL(10, 2) DEFAULT 0 NOT NULL,
     user_uid VARCHAR(255) NOT NULL,
     status VARCHAR(20) CHECK (status IN ('pending', 'completed', 'cancelled')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

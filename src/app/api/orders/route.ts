@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { customerId, paymentMethodId, products, total } = await request.json();
+  const { customerId, paymentMethodId, products, total, discount } = await request.json();
 
   try {
     // Insert the order
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         customer_id: customerId,
         total_amount: total,
         user_uid: user.id,
+        discount: discount || 0,
         status: 'completed'
       })
       .select('*, customer:customers(name)')

@@ -12,9 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
-import { pdf } from '@react-pdf/renderer';
-import { ReceiptPDF } from './ReceiptPDF';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { sub } from "date-fns";
 
 type Product = {
   id: number;
@@ -37,6 +35,7 @@ interface POSProduct extends Product {
 }
 
 export default function POSPage() {
+  const [discount, setDiscount] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -79,7 +78,7 @@ export default function POSPage() {
       if (!response.ok) throw new Error("Failed to fetch payment methods");
       const data = await response.json();
       setPaymentMethods(data);
-      setPaymentMethod(data.filter((d:any ) => d.name === 'Cash')[0]);
+      setPaymentMethod(data.filter((d: any) => d.name === 'Cash')[0]);
     } catch (error) {
       console.error("Error fetching payment methods:", error);
     }
@@ -149,7 +148,8 @@ export default function POSPage() {
           customerId: selectedCustomer.id,
           paymentMethodId: paymentMethod.id,
           products: formData,
-          total,
+          total: getTotal(total, discount),
+          discount: discount,
         }),
       });
 
@@ -161,34 +161,43 @@ export default function POSPage() {
 
       // Reset the form
       setSelectedProducts([]);
+      setDiscount(0);
       //print pdf
 
-     generateAndOpenPDF({
-      items: selectedProducts.map(p => ({ name: p.name, quantity: p.quantity, price: p.price })),
-      total: total,
-      orderId: order.id
-     });
+      generateAndOpenPDF({
+        items: selectedProducts.map(p => ({ name: p.name, quantity: p.quantity, price: p.price })),
+        total: order.total_amount,
+        orderId: order.id,
+        discount: order.discount,
+        subtotal: total,
+      });
 
     } catch (error) {
       console.error("Error creating order:", error);
     }
   };
 
+  const getTotal = (subTotal: number, discount: number) => {
+    return subTotal - (subTotal * discount) / 100;
+  }
+
   const generateAndOpenPDF = async (data: any) => {
     const { pdf } = await import('@react-pdf/renderer');
-  const { ReceiptPDF } = await import('./ReceiptPDF'); // adjust path if needed
+    const { ReceiptPDF } = await import('./ReceiptPDF'); // adjust path if needed
 
-  const blob = await pdf(
-    <ReceiptPDF
-      items={data.items}
-      total={data.total}
-      orderId={data.orderId}
-    />
-  ).toBlob();
+    const blob = await pdf(
+      <ReceiptPDF
+        items={data.items}
+        total={data.total}
+        orderId={data.orderId}
+        discount={data.discount}
+        subtotal={data.subtotal}
+      />
+    ).toBlob();
 
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-    };
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -239,7 +248,7 @@ export default function POSPage() {
               {selectedProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>{product.name}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>{product.price.toFixed(2)}</TableCell>
                   <TableCell>
                     <input
                       type="number"
@@ -255,7 +264,7 @@ export default function POSPage() {
                     />
                   </TableCell>
                   <TableCell>
-                    ${((product.quantity || 1) * product.price).toFixed(2)}
+                    {((product.quantity || 1) * product.price).toFixed(2)} BDT
                   </TableCell>
                   <TableCell>
                     <Button
@@ -271,7 +280,17 @@ export default function POSPage() {
             </TableBody>
           </Table>
           <div className="mt-4 text-right">
-            <strong>Total: {total.toFixed(2)} BDT</strong>
+            <div className="mt-2"><strong>Subtotal Total: {total.toFixed(2)} BDT</strong></div>
+            <div className="mt-2"><strong>Discount : <input
+              type="number"
+              min="0"
+              value={discount || 0}
+              onChange={(e) =>
+                setDiscount(parseInt(e.target.value))
+              }
+              className="w-16 p-1 border rounded"
+            /> </strong> </div>
+            <div className="mt-2"><strong>Total: {getTotal(total, discount).toFixed(2)} BDT</strong></div>
           </div>
           <div className="mt-4">
             <Button onClick={handleCreateOrder} disabled={selectedProducts.length === 0 || !selectedCustomer || !paymentMethod}>
