@@ -67,8 +67,9 @@ function addDays(date: Date, days: number) {
 
 export default function Cashier() {
   const [dateFrom, setDateFrom] = useState<Date>();
-  const [dateTo, setDateTo] = useState<Date>()
+  const [dateTo, setDateTo] = useState<Date>();
 
+  const [transactionDate, setTransactionDate] = useState<Date|undefined>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filtertedTransaction, setFilteredTransaction] = useState<Transaction[]>([]);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
@@ -82,6 +83,7 @@ export default function Cashier() {
     type: "income",
     amount: 0,
     status: "completed",
+    created_at: new Date().toISOString(),
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,12 +115,20 @@ export default function Cashier() {
 
   const handleAddTransaction = async () => {
     try {
+
       const response = await fetch("/api/transactions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newTransaction),
+        body: JSON.stringify({
+          description: newTransaction.description,
+          category: newTransaction.category,
+          type: newTransaction.type,
+          amount: newTransaction.amount,
+          status: newTransaction.status,
+          created_at: transactionDate?.toLocaleString(),
+        }),
       });
 
       if (response.ok) {
@@ -131,6 +141,7 @@ export default function Cashier() {
           type: "income",
           amount: 0,
           status: "completed",
+          created_at: new Date().toISOString(),
         });
       } else {
         console.error("Failed to add transaction");
@@ -378,7 +389,30 @@ export default function Cashier() {
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell>{formatDate(new Date().toISOString())}</TableCell>
+                <TableCell>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                          variant={"outline"}
+                          className={cn(
+                              "w-[240px] justify-start text-left font-normal",
+                              !transactionDate && "text-muted-foreground"
+                          )}
+                      >
+                        <CalendarIcon />
+                        {transactionDate ? format(transactionDate, "PPP") : <span>Select Date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                          mode="single"
+                          selected={transactionDate}
+                          onSelect={setTransactionDate}
+                          initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </TableCell>
                 <TableCell>
                   <Input
                     name="amount"
