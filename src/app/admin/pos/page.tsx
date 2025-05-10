@@ -66,7 +66,6 @@ export default function POSPage() {
       if (!response.ok) throw new Error("Failed to fetch customers");
       const data = await response.json();
       setCustomers(data);
-      setSelectedCustomer(data[0]);
     } catch (error) {
       console.error("Error fetching customers:", error);
     }
@@ -201,7 +200,7 @@ export default function POSPage() {
 
   return (
     <div className="container mx-auto p-4">
-      {/*<Card className="mb-4">
+      <Card className="mb-4">
         <CardHeader>
           <CardTitle>Sale Details</CardTitle>
         </CardHeader>
@@ -221,7 +220,7 @@ export default function POSPage() {
             />
           </div>
         </CardContent>
-      </Card>*/}
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Products</CardTitle>
