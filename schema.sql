@@ -68,5 +68,12 @@ CREATE TABLE transactions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE role (
+     id SERIAL PRIMARY KEY,
+     email VARCHAR(100),
+     role VARCHAR(50)
+);
+
+INSERT INTO role (email, role) values ('rifat@rifat.com', 'ADMIN');
 -- Insert initial payment methods
-INSERT INTO payment_methods (name) VALUES ('Credit Card'), ('Debit Card'), ('Cash');
+INSERT INTO payment_methods (name) VALUES ('Bkash'), ('Nagad'), ('Cash');

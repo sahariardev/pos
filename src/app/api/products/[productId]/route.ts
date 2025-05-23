@@ -1,84 +1,98 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import {createClient} from '@/lib/supabase/server'
+import {NextResponse} from 'next/server'
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { productId: string, orderId: string } }
+    request: Request,
+    {params}: { params: { productId: string } }
 ) {
-  const supabase = createClient();
+    const supabase = createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    const {data: {user}} = await supabase.auth.getUser();
 
-  const updatedProduct = await request.json();
-  const productId = params.productId;
-  const orderId = params.orderId;
+    if (!user) {
+        return NextResponse.json({error: 'Unauthorized'}, {status: 401})
+    }
 
-  const { data, error } = await supabase
-    .from('products')
-    .update({ ...updatedProduct, user_uid: user.id })
-    .eq('id', productId)
-    .eq('user_uid', user.id)
-    .select()
+    if (!await isAdmin(user.email || '')) {
+        return NextResponse.json({error: 'User is not admin'}, {status: 401})
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+    const updatedProduct = await request.json();
+    const productId = params.productId;
 
-  if (data.length === 0) {
-    return NextResponse.json({ error: 'Product not found or not authorized' }, { status: 404 })
-  }
+    const {data, error} = await supabase
+        .from('products')
+        .update({...updatedProduct, user_uid: user.id})
+        .eq('id', productId)
+        .select()
 
-  const orderUpdate = await supabase
-    .from('orders')
-    .update({ ...updatedProduct, user_uid: user.id })
-    .eq('id', orderId)
-    .eq('user_uid', user.id)
+    if (error) {
+        return NextResponse.json({error: error.message}, {status: 500})
+    }
 
-  if (orderUpdate.error) {
-    return NextResponse.json({ error: orderUpdate.error.message }, { status: 500 })
-  }
+    if (data.length === 0) {
+        return NextResponse.json({error: 'Product not found or not authorized'}, {status: 404})
+    }
 
-  return NextResponse.json(data[0])
+    return NextResponse.json(data[0])
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { productId: string, orderId: string } }
+    request: Request,
+    {params}: { params: { productId: string, orderId: string } }
 ) {
-  const supabase = createClient();
+    const supabase = createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    const {data: {user}} = await supabase.auth.getUser();
 
-  const productId = params.productId;
-  const orderId = params.orderId;
+    if (!user) {
+        return NextResponse.json({error: 'Unauthorized'}, {status: 401})
+    }
 
-  const { error } = await supabase
-    .from('products')
-    .delete()
-    .eq('id', productId)
-    .eq('user_uid', user.id)
+    const productId = params.productId;
+    const orderId = params.orderId;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+    const {error} = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId)
+        .eq('user_uid', user.id)
 
-  const orderDelete = await supabase
-    .from('orders')
-    .delete()
-    .eq('id', orderId)
-    .eq('user_uid', user.id)
+    if (error) {
+        return NextResponse.json({error: error.message}, {status: 500})
+    }
 
-  if (orderDelete.error) {
-    return NextResponse.json({ error: orderDelete.error.message }, { status: 500 })
-  }
+    const orderDelete = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId)
+        .eq('user_uid', user.id)
 
-  return NextResponse.json({ message: 'Product and Order deleted successfully' })
+    if (orderDelete.error) {
+        return NextResponse.json({error: orderDelete.error.message}, {status: 500})
+    }
+
+    return NextResponse.json({message: 'Product and Order deleted successfully'})
+}
+
+async function isAdmin(userEmail: string): Promise<boolean> {
+    const supabase = createClient();
+
+    const {data, error} = await supabase
+        .from('role')
+        .select('*')
+        .eq('email', userEmail);
+
+    console.log(data);
+
+
+    if (error) {
+        return false;
+    }
+
+    if (data?.length == 0) {
+        return false;
+    }
+
+    return data[0].role === 'ADMIN';
 }
