@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Font,
 } from '@react-pdf/renderer';
+import {formatDateWithTime} from "@/lib/utils";
 
 // Optional: Register monospaced font for receipt feel
 Font.register({
@@ -66,9 +67,12 @@ type ReceiptPDFProps = {
   orderId: number;
   discount: number;
   subtotal: number;
+  time: string;
 };
 
-export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ items, total, orderId, discount, subtotal }) => {
+export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ items, total, orderId, discount, subtotal, time }) => {
+  const date = new Date(time);
+  date.setHours(date.getHours() + 6);
 
   return (<Document>
     <Page size={{ width: 165.35, height: 600 }} style={styles.page}>
@@ -82,6 +86,7 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ items, total, orderId, d
         <Text style={[styles.center, styles.bold]}>Whatta Cup!</Text>
         <Text style={styles.center}>Doulatpur, Khulna</Text>
         <Text style={styles.center}>Order ID # {orderId % 100}</Text>
+        <Text style={styles.center}>{formatDateWithTime(date)}</Text>
         <Text style={styles.center}>------------------------------</Text>
       </View>
 

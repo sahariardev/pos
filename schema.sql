@@ -74,6 +74,6 @@ CREATE TABLE role (
      role VARCHAR(50)
 );
 
-INSERT INTO role (email, role) values ('rifat@rifat.com', 'ADMIN');
+INSERT INTO role (email, role) values ('islamkochi20@gmail.com', 'ADMIN');
 -- Insert initial payment methods
 INSERT INTO payment_methods (name) VALUES ('Bkash'), ('Nagad'), ('Cash');
