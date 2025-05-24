@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         price
       )
       `)
-      .order('created_at', { ascending: false }) // latest orders first
+      .order('created_at', { ascending: false })
       .limit(5);
 
   if (error) {

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
-    .eq('user_uid', user.id)
+    .order('created_at', { ascending: false })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
