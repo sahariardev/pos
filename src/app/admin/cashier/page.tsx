@@ -138,11 +138,12 @@ export default function Cashier() {
         setNewTransaction({
           description: "",
           category: "",
-          type: "income",
+          type: newTransaction.type,
           amount: 0,
           status: "completed",
           created_at: new Date().toISOString(),
         });
+
       } else {
         console.error("Failed to add transaction");
       }
@@ -385,7 +386,7 @@ export default function Cashier() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
+                      <SelectItem value="expense" >Expense</SelectItem>
                     </SelectContent>
                   </Select>
                 </TableCell>
