@@ -24,11 +24,12 @@ interface ComboboxProps {
   onSelect: (id: number | string) => void;
   noSelect?: boolean;
   className?: string;
+  initialValue?: string;
 }
 
-export function Combobox({ items, placeholder, onSelect, noSelect, className }: ComboboxProps) {
+export function Combobox({ items, placeholder, onSelect, noSelect, className, initialValue }: ComboboxProps) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue ? initialValue : "");
   const [popoverWidth, setPopoverWidth] = useState(0);
 
 
@@ -39,6 +40,12 @@ export function Combobox({ items, placeholder, onSelect, noSelect, className }: 
       setFilteredItems(items);
     }
   }, [items]);
+
+  useEffect(() => {
+    if (initialValue !== undefined) {
+      setValue(initialValue);
+    }
+  }, [initialValue]);
   
   const handleFilter = (data: any) => {
     const query = data.toLowerCase();

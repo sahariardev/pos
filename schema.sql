@@ -77,3 +77,13 @@ CREATE TABLE role (
 INSERT INTO role (email, role) values ('islamkochi20@gmail.com', 'ADMIN');
 -- Insert initial payment methods
 INSERT INTO payment_methods (name) VALUES ('Bkash'), ('Nagad'), ('Cash');
+
+CREATE TABLE backups
+(
+    id         SERIAL PRIMARY KEY,
+    old_body       VARCHAR(1000) NOT NULL,
+    new_body       VARCHAR(1000),
+    record_type VARCHAR(255) NOT NULL,
+    user_uid   VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

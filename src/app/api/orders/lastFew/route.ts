@@ -1,13 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import {hasAllRole, ORDER_VIEW, PRODUCTS_VIEW} from "@/lib/accessUtil";
 
 export async function GET(request: Request) {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!user || !await hasAllRole(user.email, [ORDER_VIEW])) {
+    return NextResponse.json({error: 'Unauthorized'}, {status: 401})
   }
 
   const { data, error } = await supabase
@@ -21,7 +22,11 @@ export async function GET(request: Request) {
       created_at,
       discount,
       customer:customer_id (
-        name
+        name,
+        id
+      ),
+      transaction:transactions(
+        payment_method_id
       ),
       order_items:order_items (
         id,

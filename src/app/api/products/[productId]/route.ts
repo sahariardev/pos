@@ -1,5 +1,6 @@
 import {createClient} from '@/lib/supabase/server'
 import {NextResponse} from 'next/server'
+import {hasAllRole, hasAnyRole, PRODUCTS_CREATE, PRODUCTS_EDIT} from "@/lib/accessUtil";
 
 export async function PUT(
     request: Request,
@@ -9,12 +10,8 @@ export async function PUT(
 
     const {data: {user}} = await supabase.auth.getUser();
 
-    if (!user) {
+    if (!user || !await hasAllRole(user.email, [PRODUCTS_EDIT])) {
         return NextResponse.json({error: 'Unauthorized'}, {status: 401})
-    }
-
-    if (!await isAdmin(user.email || '')) {
-        return NextResponse.json({error: 'User is not admin'}, {status: 401})
     }
 
     const updatedProduct = await request.json();
@@ -37,62 +34,41 @@ export async function PUT(
     return NextResponse.json(data[0])
 }
 
-export async function DELETE(
-    request: Request,
-    {params}: { params: { productId: string, orderId: string } }
-) {
-    const supabase = createClient();
+// export async function DELETE(
+//     request: Request,
+//     {params}: { params: { productId: string, orderId: string } }
+// ) {
+//     const supabase = createClient();
+//
+//     const {data: {user}} = await supabase.auth.getUser();
+//
+//     if (!user) {
+//         return NextResponse.json({error: 'Unauthorized'}, {status: 401})
+//     }
+//
+//     const productId = params.productId;
+//     const orderId = params.orderId;
+//
+//     const {error} = await supabase
+//         .from('products')
+//         .delete()
+//         .eq('id', productId)
+//         .eq('user_uid', user.id)
+//
+//     if (error) {
+//         return NextResponse.json({error: error.message}, {status: 500})
+//     }
+//
+//     const orderDelete = await supabase
+//         .from('orders')
+//         .delete()
+//         .eq('id', orderId)
+//         .eq('user_uid', user.id)
+//
+//     if (orderDelete.error) {
+//         return NextResponse.json({error: orderDelete.error.message}, {status: 500})
+//     }
+//
+//     return NextResponse.json({message: 'Product and Order deleted successfully'})
+// }
 
-    const {data: {user}} = await supabase.auth.getUser();
-
-    if (!user) {
-        return NextResponse.json({error: 'Unauthorized'}, {status: 401})
-    }
-
-    const productId = params.productId;
-    const orderId = params.orderId;
-
-    const {error} = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId)
-        .eq('user_uid', user.id)
-
-    if (error) {
-        return NextResponse.json({error: error.message}, {status: 500})
-    }
-
-    const orderDelete = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', orderId)
-        .eq('user_uid', user.id)
-
-    if (orderDelete.error) {
-        return NextResponse.json({error: orderDelete.error.message}, {status: 500})
-    }
-
-    return NextResponse.json({message: 'Product and Order deleted successfully'})
-}
-
-async function isAdmin(userEmail: string): Promise<boolean> {
-    const supabase = createClient();
-
-    const {data, error} = await supabase
-        .from('role')
-        .select('*')
-        .eq('email', userEmail);
-
-    console.log(data);
-
-
-    if (error) {
-        return false;
-    }
-
-    if (data?.length == 0) {
-        return false;
-    }
-
-    return data[0].role === 'ADMIN';
-}

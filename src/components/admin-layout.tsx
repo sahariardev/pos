@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -29,6 +28,7 @@ import {
   UsersIcon,
   ShoppingBagIcon,
 } from "lucide-react";
+import {useState, useEffect} from "react";
 
 const pageNames: { [key: string]: string } = {
   "/admin": "Dashboard",
@@ -51,8 +51,35 @@ const handleLogout = async () => {
   }
 };
 
+type UserInfo = {
+  email: string;
+  roles: string[];
+}
+
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await fetch("/api/userInfo");
+        if (!response.ok) {
+          throw new Error("Failed to fetch customers");
+        }
+        const data = await response.json();
+
+        setUserInfo(data);
+
+      } catch (error) {
+
+      } finally {
+
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -66,12 +93,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </Link>
         <h1 className="text-xl font-bold">{pageNames[pathname]}</h1>
         <div className="relative ml-auto flex-1 md:grow-0">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
-          />
+
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -90,7 +112,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>{userInfo?.email}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
@@ -101,7 +123,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <aside className="fixed mt-[56px] inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
           <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
             <TooltipProvider>
-              <Tooltip>
+              {userInfo?.roles.includes('TRANSACTION_VIEW') && <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
                     href="/admin"
@@ -116,8 +138,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">Dashboard</TooltipContent>
-              </Tooltip>
-              <Tooltip>
+              </Tooltip> }
+              {userInfo?.roles.includes('TRANSACTION_VIEW') && <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
                     href="/admin/cashier"
@@ -132,8 +154,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">Cashier</TooltipContent>
-              </Tooltip>
-              <Tooltip>
+              </Tooltip>}
+              {userInfo?.roles.includes('PRODUCTS_VIEW') &&  <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
                     href="/admin/products"
@@ -148,8 +170,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">Products</TooltipContent>
-              </Tooltip>
-              <Tooltip>
+              </Tooltip> }
+              {userInfo?.roles.includes('TRANSACTION_VIEW') && <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
                     href="/admin/customers"
@@ -164,8 +186,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">Customers</TooltipContent>
-              </Tooltip>
-              <Tooltip>
+              </Tooltip>}
+              {userInfo?.roles.includes('ORDER_VIEW') && <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
                     href="/admin/orders"
@@ -180,8 +202,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">Orders</TooltipContent>
-              </Tooltip>
-              <Tooltip>
+              </Tooltip> }
+              {userInfo?.roles.includes('ORDER_VIEW') && <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
                     href="/admin/pos"
@@ -196,7 +218,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">Point of Sale</TooltipContent>
-              </Tooltip>
+              </Tooltip>}
             </TooltipProvider>
           </nav>
         </aside>

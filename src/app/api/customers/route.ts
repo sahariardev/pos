@@ -13,7 +13,6 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from('customers')
     .select('id, name')
-    .eq('user_uid', user.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

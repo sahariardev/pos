@@ -1,12 +1,13 @@
 "use client";
 
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
 import {Combobox} from "@/components/ui/combobox";
 import {Button} from "@/components/ui/button";
-import {FilePenIcon, PrinterIcon} from "lucide-react";
+import {DeleteIcon, FilePenIcon, Loader2Icon, PrinterIcon} from "lucide-react";
 import {formatDate} from "@/lib/utils";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 
 type Product = {
     id: number;
@@ -36,6 +37,10 @@ type OrderItem = {
     price: number;
 };
 
+type Transaction = {
+    payment_method_id: number;
+}
+
 type Order = {
     id: number;
     customer_id: number;
@@ -46,7 +51,9 @@ type Order = {
     order_items: OrderItem[],
     customer: {
         name: string;
-    };
+        id: number;
+    },
+    transaction: Transaction[];
 };
 
 export default function POSPage() {
@@ -60,6 +67,11 @@ export default function POSPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+    const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+    const [editing, setEditing] = useState<boolean>(false);
+    const [editOrderId, setEditOrderId] = useState<number | null>(null);
+    const [failedMessageDialog, setFailedMessageDialog] = useState<boolean>(false);
 
     useEffect(() => {
         fetchProducts();
@@ -120,7 +132,7 @@ export default function POSPage() {
         }
     };
 
-    const handleSelectProduct = (productId: number | string) => {
+    const handleSelectProduct = (productId: number | string, quantity: number = 0) => {
         const product = products.find((p) => p.id === productId);
         if (!product) return;
         if (selectedProducts.some((p) => p.id === productId)) {
@@ -130,7 +142,7 @@ export default function POSPage() {
                 )
             );
         } else {
-            setSelectedProducts([...selectedProducts, {...product, quantity: 1}]);
+            setSelectedProducts([...selectedProducts, {...product, quantity: quantity}]);
         }
     };
 
@@ -165,14 +177,22 @@ export default function POSPage() {
         0
     );
 
+    const handleCancellingEditingOrder = () => {
+        setEditing(false);
+        setEditOrderId(null);
+        setSelectedCustomer(null);
+        setSelectedProducts([]);
+        setPaymentMethod(null);
+    }
+
     const handleCreateOrder = async () => {
         if (!selectedCustomer || !paymentMethod || selectedProducts.length === 0) {
             return;
         }
 
+        setLoading(true);
+
         const formData = selectedProducts.map(p => ({id: p.id, quantity: p.quantity, price: p.price}));
-        const items = selectedProducts.map(p => ({name: p.name, quantity: p.quantity, price: p.price}));
-        console.log(items);
 
         try {
             const response = await fetch("/api/orders", {
@@ -186,20 +206,21 @@ export default function POSPage() {
                     products: formData,
                     total: getTotal(total, discount),
                     discount: discount,
+                    orderId: editOrderId,
                 }),
             });
 
-            if (!response.ok) throw new Error("Failed to create order");
+            if (!response.ok) {
+                setFailedMessageDialog(true);
+                throw new Error("Failed to create order")
+            };
 
             const order = await response.json();
 
-            console.log(order);
-
-            // Reset the form
             setSelectedProducts([]);
             setDiscount(0);
             fetchOrders();
-            //print pdf
+            handleCancellingEditingOrder();
 
             generateAndOpenPDF({
                 items: selectedProducts.map(p => ({name: p.name, quantity: p.quantity, price: p.price})),
@@ -213,6 +234,8 @@ export default function POSPage() {
         } catch (error) {
             console.error("Error creating order:", error);
         }
+
+        setLoading(false);
     };
 
     const getOrderInfo = (order: Order) => {
@@ -243,6 +266,35 @@ export default function POSPage() {
         window.open(url, '_blank');
     };
 
+    const handleDeleteOrder =  async ()  => {
+        if (!orderToDelete) return;
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/orders/${orderToDelete.id}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) {
+                throw new Error("Error deleting order");
+            }
+
+            setOrders(orders.filter((o) => o.id !== orderToDelete.id));
+            setIsDeleteConfirmationOpen(false);
+            setOrderToDelete(null);
+        } catch (error) {
+            console.error(error);
+        }
+        setLoading(false)
+    };
+
+    if (loading) {
+        return (
+            <div className="h-[80vh] flex items-center justify-center">
+                <Loader2Icon className="mx-auto h-12 w-12 animate-spin"/>
+            </div>
+        );
+    }
+
     return (
         <div className="container mx-auto p-4">
             <Card className="mb-4">
@@ -254,12 +306,14 @@ export default function POSPage() {
                         <Combobox
                             items={customers}
                             placeholder="Select Customer"
+                            initialValue={selectedCustomer ? selectedCustomer.name : ""}
                             onSelect={handleSelectCustomer}
                         />
                     </div>
                     <div className="flex-1">
                         <Combobox
                             items={paymentMethods}
+                            initialValue={paymentMethod ? paymentMethod.name : ""}
                             placeholder="Select Payment Method"
                             onSelect={handleSelectPaymentMethod}
                         />
@@ -339,8 +393,15 @@ export default function POSPage() {
                     <div className="mt-4">
                         <Button onClick={handleCreateOrder}
                                 disabled={selectedProducts.length === 0 || !selectedCustomer || !paymentMethod}>
-                            Create Order
+                            { editing ? 'Update Order' : 'Create Order' }
                         </Button>
+                        {editing && <div>
+                            <Button onClick={handleCancellingEditingOrder} className="mt-2">
+                               Cancel Editing Order
+                            </Button>
+
+                        </div>}
+
                     </div>
                 </CardContent>
             </Card>
@@ -373,7 +434,24 @@ export default function POSPage() {
                                                     size="icon"
                                                     variant="ghost"
                                                     onClick={() => {
+                                                        setEditing(true);
+                                                        setEditOrderId(order.id);
+                                                        handleSelectPaymentMethod(order.transaction[0].payment_method_id);
+                                                        handleSelectCustomer(order.customer_id);
+                                                        setDiscount(order.discount);
+                                                        setSelectedProducts([]);
 
+                                                        let selectedProductTempList: POSProduct[] = [];
+                                                        for (const orderItem of order.order_items) {
+                                                            const product = products.find((p) => p.id === orderItem.product_id);
+                                                            if (!product) continue;
+                                                            selectedProductTempList.push({
+                                                                ...product,
+                                                                quantity: orderItem.quantity
+                                                            });
+                                                        }
+
+                                                        setSelectedProducts([...selectedProductTempList]);
                                                     }}
                                                 >
                                                     <FilePenIcon className="w-4 h-4"/>
@@ -401,6 +479,17 @@ export default function POSPage() {
                                                     <PrinterIcon className="w-4 h-4"/>
                                                     <span className="sr-only">Print</span>
                                                 </Button>
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    onClick={() => {
+                                                        setIsDeleteConfirmationOpen(true);
+                                                        setOrderToDelete(order);
+                                                    }}
+                                                >
+                                                    <DeleteIcon className="w-4 h-4"/>
+                                                    <span className="sr-only">Delete</span>
+                                                </Button>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -410,6 +499,48 @@ export default function POSPage() {
                     </div>
                 </CardContent>
             </Card>
+            <Dialog
+                open={isDeleteConfirmationOpen}
+                onOpenChange={setIsDeleteConfirmationOpen}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Deletion</DialogTitle>
+                    </DialogHeader>
+                    Are you sure you want to delete this order? This action cannot be undone.
+                    <DialogFooter>
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsDeleteConfirmationOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDeleteOrder}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={failedMessageDialog}
+                onOpenChange={setFailedMessageDialog}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Operation Failed</DialogTitle>
+                    </DialogHeader>
+                    Sorry, we couldn't complete the operation you tried to perform.
+                    <DialogFooter>
+                        <Button
+                            variant="secondary"
+                            onClick={() => setFailedMessageDialog(false)}
+                        >
+                            Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

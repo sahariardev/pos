@@ -1,13 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import {hasAllRole, hasAnyRole, PRODUCTS_CREATE, TRANSACTION_CREATE, TRANSACTION_VIEW} from "@/lib/accessUtil";
 
 export async function GET(request: Request) {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!user || !await hasAllRole(user.email, [TRANSACTION_VIEW])) {
+    return NextResponse.json({error: 'Unauthorized'}, {status: 401})
   }
 
   const { data, error } = await supabase
@@ -26,9 +27,9 @@ export async function POST(request: Request) {
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!user || !await hasAllRole(user.email, [TRANSACTION_CREATE])) {
+    return NextResponse.json({error: 'Unauthorized'}, {status: 401})
   }
 
   const newTransaction = await request.json();
