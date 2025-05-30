@@ -530,7 +530,7 @@ export default function POSPage() {
                     <DialogHeader>
                         <DialogTitle>Operation Failed</DialogTitle>
                     </DialogHeader>
-                    Sorry, we couldn't complete the operation you tried to perform.
+                    Sorry, we couldnt complete the operation you tried to perform.
                     <DialogFooter>
                         <Button
                             variant="secondary"
