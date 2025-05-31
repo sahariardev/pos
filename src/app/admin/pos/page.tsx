@@ -132,7 +132,7 @@ export default function POSPage() {
         }
     };
 
-    const handleSelectProduct = (productId: number | string, quantity: number = 0) => {
+    const handleSelectProduct = (productId: number | string) => {
         const product = products.find((p) => p.id === productId);
         if (!product) return;
         if (selectedProducts.some((p) => p.id === productId)) {
@@ -142,7 +142,7 @@ export default function POSPage() {
                 )
             );
         } else {
-            setSelectedProducts([...selectedProducts, {...product, quantity: quantity}]);
+            setSelectedProducts([...selectedProducts, {...product, quantity: 1}]);
         }
     };
 
@@ -182,7 +182,6 @@ export default function POSPage() {
         setEditOrderId(null);
         setSelectedCustomer(null);
         setSelectedProducts([]);
-        setPaymentMethod(null);
     }
 
     const handleCreateOrder = async () => {
@@ -229,6 +228,7 @@ export default function POSPage() {
                 discount: order.discount,
                 subtotal: total,
                 time: order.created_at,
+                customerName: selectedCustomer.name,
             });
 
         } catch (error) {
@@ -259,6 +259,7 @@ export default function POSPage() {
                 discount={data.discount}
                 subtotal={data.subtotal}
                 time={data.time}
+                message={data.customerName}
             />
         ).toBlob();
 

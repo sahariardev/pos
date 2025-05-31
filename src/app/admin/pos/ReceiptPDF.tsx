@@ -68,9 +68,10 @@ type ReceiptPDFProps = {
   discount: number;
   subtotal: number;
   time: string;
+  message: string
 };
 
-export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ items, total, orderId, discount, subtotal, time }) => {
+export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ items, total, orderId, discount, subtotal, time, message }) => {
   const date = new Date(time);
   date.setHours(date.getHours() + 6);
 
@@ -87,6 +88,7 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ items, total, orderId, d
         <Text style={styles.center}>Doulatpur, Khulna</Text>
         <Text style={styles.center}>Order ID # {orderId % 100}</Text>
         <Text style={styles.center}>{formatDateWithTime(date)}</Text>
+        <Text style={styles.center}>{message}</Text>
         <Text style={styles.center}>------------------------------</Text>
       </View>
 
