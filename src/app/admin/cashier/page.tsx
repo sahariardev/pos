@@ -50,6 +50,7 @@ export default function Cashier() {
     const [transactionDate, setTransactionDate] = useState<Date | undefined>(new Date());
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [filtertedTransaction, setFilteredTransaction] = useState<Transaction[]>([]);
+    const [filteredTransactionType, setFilteredTransactionType] = useState<String>("all");
     const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
         useState(false);
     const [transactionToDelete, setTransactionToDelete] =
@@ -93,19 +94,24 @@ export default function Cashier() {
     };
 
     const handleFilter = () => {
+        let filteredData = transactions;
+
         if (dateFrom && dateTo) {
-            const filteredTransactions = transactions.filter((transaction) => {
-                console.log(transaction);
+            filteredData = filteredData.filter((transaction) => {
                 const transactionDate = new Date(transaction.created_at);
-                console.log(transactionDate >= dateFrom && transactionDate <= dateTo);
                 return (
                     transactionDate >= dateFrom && transactionDate < addDays(dateTo, 1)
                 );
             });
-            setFilteredTransaction(filteredTransactions);
-        } else {
-            setFilteredTransaction(transactions);
         }
+
+        if (filteredTransactionType !== "all") {
+            filteredData = filteredData.filter((transaction) => {
+                return transaction.type === filteredTransactionType;
+            });
+        }
+
+        setFilteredTransaction(filteredData);
     };
 
     const handleAddTransaction = async () => {
@@ -333,6 +339,24 @@ export default function Cashier() {
                             />
                         </PopoverContent>
                     </Popover>
+
+                    <div className="w-[240px]">
+                        <Select
+                            defaultValue="all"
+                            onValueChange={(value) =>
+                                setFilteredTransactionType(value)
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Theme"/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="income">Income</SelectItem>
+                                <SelectItem value="expense">Expense</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     <Button className="w-24" size="sm" onClick={handleFilter}>
                         Filter
