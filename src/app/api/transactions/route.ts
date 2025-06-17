@@ -11,10 +11,11 @@ export async function GET(request: Request) {
     return NextResponse.json({error: 'Unauthorized'}, {status: 401})
   }
 
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const {data, error} = await supabase
+      .from('transactions')
+      .select('*')
+      .order('created_at', {ascending: false})
+      .limit(200);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
