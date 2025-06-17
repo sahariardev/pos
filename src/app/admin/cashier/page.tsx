@@ -117,6 +117,7 @@ export default function Cashier() {
     const handleAddTransaction = async () => {
         try {
 
+            setLoading(true);
             const response = await fetch("/api/transactions", {
                 method: "POST",
                 headers: {
@@ -151,6 +152,8 @@ export default function Cashier() {
         } catch (error) {
             console.error("Error adding transaction:", error);
         }
+
+        setLoading(false);
     };
 
     const handleUpdateTransaction = async () => {
